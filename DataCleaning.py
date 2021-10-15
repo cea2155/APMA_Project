@@ -22,6 +22,7 @@ url_df = pd.read_csv('games.csv')
 standings = pd.read_csv('Standings.csv').iloc[:, :2]
 batters = pd.read_csv('Batters.csv').iloc[:, :2]
 pitchers = pd.read_csv('Pitchers.csv').iloc[:, :2]
+lst = []
 
 # get standings for each year
 standings_dict = {}
@@ -99,7 +100,7 @@ for column in [i[:10] for i in url_df.columns if '-' in i]:
                 
 
             
-            df_temp = table_temp[table_temp['Inn'] == inn][['Batter', 'Pitcher','Inn','Score', 'Out', 'RoB', 'R/O']]
+            df_temp = table_temp[table_temp['Inn'] == inn][['Batter', 'Pitcher','Inn','Score', 'Out', 'RoB', 'R/O', 'Play Description']]
             df_temp['Game'] = game
             df_temp['Date'] = date
             df_temp['WL_Diff'] = wl_diff
@@ -130,7 +131,7 @@ for column in [i[:10] for i in url_df.columns if '-' in i]:
                     
                 #take care of nicknames
                 else: 
-                    check_names = [a for a in batters_df.Name if 
+                    check_names = [a for a in batters_df.Name.tolist() if 
                                    i.split(' ')[1] in a and a.split(' ')[0][0] == i.split(' ')[0][0]]
                     if len(check_names) == 1:
                         name = check_names[0]
@@ -146,6 +147,8 @@ for column in [i[:10] for i in url_df.columns if '-' in i]:
                     else:
                         print(check_names)
                         print(i)
+                        lst.append(url)
+                        lst.append(i)
                         ba_lst.append(np.nan)
                         slg_lst.append(np.nan)
                         ops_lst.append(np.nan)
@@ -255,13 +258,31 @@ for column in [i[:10] for i in url_df.columns if '-' in i]:
             # create column that denotes combination of base state and outs
             df_temp['State_Out_Combo'] = df_temp.State_Bases.astype(
                 str) + '-' + df_temp.Out.astype(str)
-
+            
+            df_temp= df_temp.replace({'2-3': '1-3', '4-3': '1-3', '3-3': '2-3', 
+                '5-3': '2-3', '6-3': '2-3', '7-3': '3-3'})
+    
+            df_last = df_temp.iloc[-1:]
+            
+            MoB = int([i for i in df_last.State_Out_Combo][0].split('-')[0])
+            total_runners = MoB +1
+            
+            if int([i for i in df_last.Play_Runs][0]) == 0:
+                men_left = total_runners - int([i for i in df_last.Play_Outs][0])
+            
+            if int([i for i in df_last.Play_Runs][0]) > 0:
+                men_left = total_runners - int([i for i in df_last.Play_Runs][0]) - int([i for i in df_last.Play_Outs][0])
+                
+            new_state = '{}-3'.format(men_left)
+            df_last.loc[df_last.index[0], ['State_Out_Combo']] =new_state
+            df_temp.iloc[-1:] = df_last
+                                
+                            
             # create column that shows transitions between plays
             transition_list = [np.nan]
             for i in range(1, len(df_temp)):
                 transition = df_temp.iloc[i-1:i].State_Out_Combo[
-                    df_temp.iloc[i-1:i].State_Out_Combo.index[0]] + " to " + df_temp.iloc[
-                    i:i+1].State_Out_Combo[
+                    df_temp.iloc[i-1:i].State_Out_Combo.index[0]] + " to " + df_temp.iloc[i:i+1].State_Out_Combo[
                     df_temp.iloc[i:i+1].State_Out_Combo.index[0]]
                 transition_list.append(transition)
             df_temp['Transition'] = transition_list
@@ -290,4 +311,8 @@ transitions['Frequency'] = prob_list
 transitions.sort_values(by = ['Frequency'], ascending = False).to_csv(
         'Transitions.csv')
 
+print(lst)
+
 print(datetime.now() - startTime)
+
+

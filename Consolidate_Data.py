@@ -8,35 +8,17 @@ Created on Mon Oct  4 13:23:46 2021
 
 import pandas as pd
 import numpy as np
-import datetime as dt
 from datetime import datetime
 
 df_new = pd.read_csv('CleanedData.csv')
-
-df_new = df_new[df_new.Out !=3]
-
-
-# drops half innings (i.e. a game that ended after the top of the tenth inning)
-index_list = []
-for inn in df_new['Inning_Pair_ID'].unique():
-    temp_df = df_new[df_new.Inning_Pair_ID == inn]
-    if temp_df.Inn.nunique() < 3:
-        pass
-    if temp_df.Inn.nunique() > 2:
-        culprit = temp_df.Inn.unique().tolist()[0]
-        ind = df_new[(df_new.Inn == culprit) & (df_new.Inning_Pair_ID == inn)].index.tolist()
-        index_list = index_list + ind
-        
-        
-df_clean = df_new.drop(index_list)
 
 startTime = datetime.now()
 df = pd.DataFrame()
 df_new = pd.DataFrame()
 
 
-for ID in df_clean.Inning_Pair_ID.unique():
-    df_temp = df_clean[df_clean.Inning_Pair_ID == ID]
+for ID in df_new.Inning_Pair_ID.unique():
+    df_temp = df_new[df_new.Inning_Pair_ID == ID]
     df_t = df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 't' in i])].head(1)
     df_b = df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 'b' in i])].head(1)
     
@@ -47,6 +29,8 @@ for ID in df_clean.Inning_Pair_ID.unique():
 
         b_runs = df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 'b' in i])].Total_Runs.max()
 
+
+        
         if '2-0' in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 't' in i])].State_Out_Combo.tolist():
             double_binary_t = 1
         if '2-0' not in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 't' in i])].State_Out_Combo.tolist():
@@ -82,6 +66,33 @@ for ID in df_clean.Inning_Pair_ID.unique():
             triple_binary_b = 1
         if '4-0' not in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 'b' in i])].State_Out_Combo.tolist():
             triple_binary_b = 0
+            
+        if '5-0' in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 't' in i])].State_Out_Combo.tolist():
+            F_T_binary_t = 1
+        if '5-0' not in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 't' in i])].State_Out_Combo.tolist():
+            F_T_binary_t = 0
+        if '5-0' in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 'b' in i])].State_Out_Combo.tolist():
+            F_T_binary_b = 1
+        if '5-0' not in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 'b' in i])].State_Out_Combo.tolist():
+            F_T_binary_b = 0
+            
+        if '6-0' in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 't' in i])].State_Out_Combo.tolist():
+            S_T_binary_t = 1
+        if '6-0' not in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 't' in i])].State_Out_Combo.tolist():
+            S_T_binary_t = 0
+        if '6-0' in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 'b' in i])].State_Out_Combo.tolist():
+            S_T_binary_b = 1
+        if '6-0' not in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 'b' in i])].State_Out_Combo.tolist():
+            S_T_binary_b = 0
+        
+        if '7-0' in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 't' in i])].State_Out_Combo.tolist():
+            Loaded_binary_t = 1
+        if '7-0' not in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 't' in i])].State_Out_Combo.tolist():
+            Loaded_binary_t = 0
+        if '7-0' in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 'b' in i])].State_Out_Combo.tolist():
+            Loaded_binary_b = 1
+        if '7-0' not in df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 'b' in i])].State_Out_Combo.tolist():
+            Loaded_binary_b = 0
 
         df_new = pd.DataFrame()
 
@@ -110,10 +121,17 @@ for ID in df_clean.Inning_Pair_ID.unique():
         df_new['B_ERA'] = pd.Series(df_b.Mean_ERA.tolist()[0])
         df_new['T_ERA_Plus'] = pd.Series(df_t.Mean_ERA_Plus.tolist()[0])
         df_new['B_ERA_Plus'] = pd.Series(df_b.Mean_ERA_Plus.tolist()[0])
-        df_new['T_State_Out_Combos'] = pd.Series(str(df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 
-                                                                     't' in i])].State_Out_Combo.tolist()))
-        df_new['B_State_Out_Combos'] = pd.Series(str(df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 
-                                                                     'b' in i])].State_Out_Combo.tolist()))
+        
+        df_new['T_State_Out_Combos'] = np.nan
+        df_new['T_State_Out_Combos'] = df_new['T_State_Out_Combos'].astype(object)
+        df_new.at[0, 'T_State_Out_Combos'] = np.array(df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 
+                                                                     't' in i])].State_Out_Combo.tolist())
+        df_new['B_State_Out_Combos'] = np.nan
+        df_new['B_State_Out_Combos'] = df_new['B_State_Out_Combos'].astype(object)
+        df_new.at[0, 'B_State_Out_Combos'] = np.array(df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 
+                                                                     'b' in i])].State_Out_Combo.tolist())
+        
+         
         df_new['T_Runs'] = pd.Series(t_runs)
         df_new['B_Runs'] = pd.Series(b_runs)
         df_new['Run_Diff'] = pd.Series(t_runs - b_runs)
@@ -126,6 +144,12 @@ for ID in df_clean.Inning_Pair_ID.unique():
         df_new['F_S_Binary_B'] = pd.Series(first_second_binary_b)
         df_new['Triple_Binary_T'] = pd.Series(triple_binary_t)
         df_new['Triple_Binary_B'] = pd.Series(triple_binary_b)
+        df_new['F_T_Binary_T'] = pd.Series(F_T_binary_t)
+        df_new['F_T_Binary_B'] = pd.Series(F_T_binary_b)
+        df_new['S_T_Binary_B'] = pd.Series(S_T_binary_b)
+        df_new['S_T_Binary_T'] = pd.Series(S_T_binary_t)
+        df_new['Loaded_Binary_T'] = pd.Series(Loaded_binary_t)
+        df_new['Loaded_Binary_B'] = pd.Series(Loaded_binary_b)
 
         df = pd.concat([df, df_new])
         
@@ -143,5 +167,6 @@ binary_cond = [
 binary_vals = [1, 0]
 df['Discrepancy'] = np.select(binary_cond, binary_vals)
 
-df.to_csv('Consolidated.csv')
 
+
+df.to_csv('Consolidated.csv')
