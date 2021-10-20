@@ -38,7 +38,7 @@ df_temp = df.dropna()
 df_temp['Second'] = np.where((df_temp.Double_Binary_B  + df_temp.Double_Binary_T == 2), 
                           1, 0)
 
-regressors = ['Score_Diff',  'Initial_Discrepancy', 'Double_Binary_B', 'Double_Binary_T', 'Single_Binary_B', 'Single_Binary_T',
+regressors = ['Score_Diff','Double_Binary_B', 'Double_Binary_T', 'Single_Binary_B', 'Single_Binary_T',
               'F_T_Binary_B', 'F_T_Binary_T', 
               'Triple_Binary_B', 'Triple_Binary_T', 'S_T_Binary_B', 'S_T_Binary_T',
               'Loaded_Binary_B', 'Loaded_Binary_T',  'T_Mean_BA', 'T_Mean_SLG', 'B_Mean_BA', 
@@ -73,14 +73,15 @@ params = grid_result.cv_results_['params']
 for mean, stdev, param in zip(means, stds, params):
     print("%f (%f) with: %r" % (mean, stdev, param))
     
-logisticRegr = LogisticRegression(penalty = 'l2',
-                                  solver='newton-cg', C = .01)
+logisticRegr = LogisticRegression(penalty = grid_result.best_params_['penalty'],
+                                  solver=grid_result.best_params_['solver'], 
+                                  C = grid_result.best_params_['C'])
 
 logisticRegr.fit(X_train, y_train)
 
 y_pred = logisticRegr.predict(X_test)
 
-metrics.accuracy_score(y_test, y_pred)
+print(metrics.accuracy_score(y_test, y_pred))
 
 
 log_reg = sm.Logit(y_train, sm.add_constant(X_train)).fit()

@@ -10,15 +10,14 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-df_new = pd.read_csv('CleanedData.csv')
+df_use = pd.read_csv('CleanedData.csv')
+df = pd.DataFrame()
 
 startTime = datetime.now()
-df = pd.DataFrame()
-df_new = pd.DataFrame()
 
 
-for ID in df_new.Inning_Pair_ID.unique():
-    df_temp = df_new[df_new.Inning_Pair_ID == ID]
+for ID in df_use.Inning_Pair_ID.unique():
+    df_temp = df_use[df_use.Inning_Pair_ID == ID]
     df_t = df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 't' in i])].head(1)
     df_b = df_temp[df_temp.Inn.isin([i for i in df_temp.Inn if 'b' in i])].head(1)
     
