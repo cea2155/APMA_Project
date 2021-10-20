@@ -13,7 +13,8 @@ from datetime import datetime
 import sklearn
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.model_selection import GridSearchCV
 import matplotlib.pyplot as plt
 logisticRegr = LogisticRegression()
 linreg = LinearRegression()
@@ -29,7 +30,31 @@ regressors = ['Double_Binary_T',
              'Triple_Binary_T', 'Triple_Binary_B', 'T_Mean_BA', 'T_Mean_SLG', 'B_Mean_BA', 
              'B_Mean_SLG', 'T_ERA', 'T_WHIP', 'B_ERA', 'B_WHIP']
 
-X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_state=0)
+
+
+# hyperparameters
+# found on https://machinelearningmastery.com/hyperparameters-for-classification-machine-learning-algorithms/
+# example of grid searching key hyperparametres for logistic regression
+# define models and parameters
+model = LogisticRegression()
+solvers = ['newton-cg', 'lbfgs', 'liblinear']
+penalty = ['l2', 'l1', 'elasticnet', 'none']
+c_values = [100, 10, 1.0, 0.1, 0.01]
+# define grid search
+grid = dict(solver=solvers,penalty=penalty,C=c_values)
+cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+grid_search = GridSearchCV(estimator=model, param_grid=grid, n_jobs=-1, cv=cv, scoring='accuracy',error_score=0)
+grid_result = grid_search.fit(X_train, y_train)
+# summarize results
+print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
+means = grid_result.cv_results_['mean_test_score']
+stds = grid_result.cv_results_['std_test_score']
+params = grid_result.cv_results_['params']
+for mean, stdev, param in zip(means, stds, params):
+    print("%f (%f) with: %r" % (mean, stdev, param))
+    
+logisticRegr = LogisticRegression(penalty = 'l2',
+                                  solver='newton-cg', C = .01)
 
 logisticRegr.fit(X_train, y_train)
 
